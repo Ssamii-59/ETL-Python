@@ -1,2 +1,2 @@
 # ETL Python
-Building my first data pipeline in Python
+Building my first data warehouse pipeline in Python
