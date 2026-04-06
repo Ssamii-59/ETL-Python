@@ -1,0 +1,77 @@
+import pandas as pd
+from sqlalchemy import create_engine, text
+from datetime import datetime
+
+# --- Connexion master pour créer la base si elle n'existe pas
+master = create_engine('mssql+pyodbc://ul7261/master?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
+with master.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+    result = conn.execute(text("SELECT DB_ID('DSA_magasin')")).scalar()
+    if result is None:
+        conn.execute(text("CREATE DATABASE DSA_magasin"))
+        print("Base DSA_magasin créée.")
+    else:
+        print("Base DSA_magasin existe déjà.")
+
+# --- Connexion source et DSA
+source = create_engine('mssql+pyodbc://ul7261/magasin?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
+dsa = create_engine('mssql+pyodbc://ul7261/DSA_magasin?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
+
+# --- Création des tables si elles n'existent pas
+with dsa.connect() as conn:
+    conn.execute(text("""
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Invoice')
+        CREATE TABLE Invoice (
+            InvoiceId INT NOT NULL,
+            CustomerId INT NOT NULL,
+            InvoiceDate DATETIME NOT NULL,
+            BillingAddress NVARCHAR(70),
+            BillingCity NVARCHAR(40),
+            BillingState NVARCHAR(40),
+            BillingCountry NVARCHAR(40),
+            BillingPostalCode NVARCHAR(10),
+            Total DECIMAL(10,2) NOT NULL,
+            CONSTRAINT PK_Invoice PRIMARY KEY (InvoiceId)
+        )
+    """))
+
+    conn.execute(text("""
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'InvoiceLine')
+        CREATE TABLE InvoiceLine (
+            InvoiceLineId INT NOT NULL,
+            InvoiceId INT NOT NULL,
+            TrackId INT NOT NULL,
+            UnitPrice DECIMAL(10,2) NOT NULL,
+            Quantity INT NOT NULL,
+            CONSTRAINT PK_InvoiceLine PRIMARY KEY (InvoiceLineId)
+        )
+    """))
+
+    conn.commit()
+    print("Tables Invoice et InvoiceLine vérifiées/créées.")
+
+# --- Liste des tables à copier (dans l'ordre pour respecter les FK)
+tables = ['Invoice', 'InvoiceLine']
+
+# --- Extraction depuis la source
+print(f"[{datetime.now():%H:%M:%S}] Début de l'extraction...")
+dataframes = {}
+for table in tables:
+    df = pd.read_sql(f"SELECT * FROM {table}", source)
+    dataframes[table] = df
+    print(f"  {table} : {len(df)} lignes extraites")
+
+# --- Truncate des tables DSA (ordre inverse pour les FK)
+print(f"[{datetime.now():%H:%M:%S}] Truncate des tables DSA...")
+with dsa.connect() as conn:
+    for table in reversed(tables):
+        conn.execute(text(f"TRUNCATE TABLE {table}"))
+        print(f"  {table} truncated")
+    conn.commit()
+
+# --- Chargement dans le DSA
+print(f"[{datetime.now():%H:%M:%S}] Chargement dans le DSA...")
+for table in tables:
+    dataframes[table].to_sql(table, dsa, if_exists='append', index=False, method='multi', chunksize=200)
+    print(f"  {table} : {len(dataframes[table])} lignes chargées")
+
+print(f"[{datetime.now():%H:%M:%S}] Terminé !")

@@ -1,0 +1,79 @@
+import pandas as pd
+from sqlalchemy import create_engine, text
+from datetime import datetime
+
+# --- Connexion master pour créer la base si elle n'existe pas
+master = create_engine('mssql+pyodbc://ul7261/master?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
+with master.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
+    result = conn.execute(text("SELECT DB_ID('ODS_magasin')")).scalar()
+    if result is None:
+        conn.execute(text("CREATE DATABASE ODS_magasin"))
+        print("Base ODS_magasin créée.")
+    else:
+        print("Base ODS_magasin existe déjà.")
+
+# --- Connexion source (DSA) et ODS
+source = create_engine('mssql+pyodbc://ul7261/DSA_magasin?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
+ods = create_engine('mssql+pyodbc://ul7261/ODS_magasin?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
+
+# --- Création des tables sans contraintes de clé + colonne date d'intégration
+with ods.connect() as conn:
+    conn.execute(text("""
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Invoice')
+        CREATE TABLE Invoice (
+            InvoiceId INT,
+            CustomerId INT,
+            InvoiceDate DATETIME,
+            BillingAddress NVARCHAR(70),
+            BillingCity NVARCHAR(40),
+            BillingState NVARCHAR(40),
+            BillingCountry NVARCHAR(40),
+            BillingPostalCode NVARCHAR(10),
+            Total DECIMAL(10,2),
+            Date_Integration DATETIME DEFAULT GETDATE()
+        )
+    """))
+
+    conn.execute(text("""
+        IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'InvoiceLine')
+        CREATE TABLE InvoiceLine (
+            InvoiceLineId INT,
+            InvoiceId INT,
+            TrackId INT,
+            UnitPrice DECIMAL(10,2),
+            Quantity INT,
+            Date_Integration DATETIME DEFAULT GETDATE()
+        )
+    """))
+
+    conn.commit()
+    print("Tables ODS Invoice et InvoiceLine vérifiées/créées.")
+
+# --- Liste des tables à copier
+tables = ['Invoice', 'InvoiceLine']
+
+# --- Extraction depuis le DSA
+print(f"[{datetime.now():%H:%M:%S}] Début de l'extraction depuis DSA...")
+dataframes = {}
+for table in tables:
+    df = pd.read_sql(f"SELECT * FROM {table}", source)
+    dataframes[table] = df
+    print(f"  {table} : {len(df)} lignes extraites")
+
+# --- Truncate des tables ODS
+print(f"[{datetime.now():%H:%M:%S}] Truncate des tables ODS...")
+with ods.connect() as conn:
+    for table in reversed(tables):
+        conn.execute(text(f"TRUNCATE TABLE {table}"))
+        print(f"  {table} truncated")
+    conn.commit()
+
+# --- Ajout de la date d'intégration et chargement dans l'ODS
+print(f"[{datetime.now():%H:%M:%S}] Chargement dans l'ODS...")
+date_integration = datetime.now()
+for table in tables:
+    dataframes[table]['Date_Integration'] = date_integration
+    dataframes[table].to_sql(table, ods, if_exists='append', index=False, method='multi', chunksize=200)
+    print(f"  {table} : {len(dataframes[table])} lignes chargées")
+
+print(f"[{datetime.now():%H:%M:%S}] Terminé !")
