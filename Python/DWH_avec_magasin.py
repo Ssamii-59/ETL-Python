@@ -1,9 +1,9 @@
 import pandas as pd
 from sqlalchemy import create_engine, text
 
-# --- Connexion IUT ---
-dwh = create_engine('mssql+pyodbc://ul7261/DWH?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
-ods = create_engine('mssql+pyodbc://ul7261/ODS_magasin?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
+# --- Connexion  ---
+dwh = create_engine('DWH path')
+ods = create_engine('ODS magasin path')
 
 # =================================================================
 # 1. MISE À JOUR DE LA DIMENSION TEMPS (Incrémentale)

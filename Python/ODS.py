@@ -2,22 +2,12 @@ import pandas as pd
 from sqlalchemy import create_engine
 from datetime import datetime
 
-# --- CONNEXIONS ordi de l'iut---
-"""
-source = create_engine('mssql+pyodbc://ul7261/Chinook?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
-dsa = create_engine('mssql+pyodbc://ul7261/DSA?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
-"""
 
-# --- CONNEXIONS ordi de l'iut salle 501---
+# --- CONNEXIONS ---
 
-dsa = create_engine('mssql+pyodbc://IUTC-S501-16/DSA?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
-ods = create_engine('mssql+pyodbc://IUTC-S501-16/ODS?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
+dsa = create_engine('DSA path')
+ods = create_engine('ODS path')
 
-# --- CONNEXIONS ordi maison---
-# connection dsa
-#dsa = create_engine('mssql+pyodbc://sa:Momosami.2006@localhost:1433/dsa?driver=/opt/homebrew/lib/libmsodbcsql.18.dylib&TrustServerCertificate=yes')
-# connection ods
-#ods = create_engine('mssql+pyodbc://sa:Momosami.2006@localhost:1433/ods?driver=/opt/homebrew/lib/libmsodbcsql.18.dylib&TrustServerCertificate=yes')
 
 tables = [
     'Artist', 'Album', 'Track', 'Genre', 'MediaType', 

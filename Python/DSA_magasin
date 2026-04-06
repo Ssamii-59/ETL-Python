@@ -3,7 +3,7 @@ from sqlalchemy import create_engine, text
 from datetime import datetime
 
 # --- Connexion master pour créer la base si elle n'existe pas
-master = create_engine('mssql+pyodbc://ul7261/master?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
+master = create_engine('source path')
 with master.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
     result = conn.execute(text("SELECT DB_ID('DSA_magasin')")).scalar()
     if result is None:
@@ -13,8 +13,8 @@ with master.connect().execution_options(isolation_level="AUTOCOMMIT") as conn:
         print("Base DSA_magasin existe déjà.")
 
 # --- Connexion source et DSA
-source = create_engine('mssql+pyodbc://ul7261/magasin?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
-dsa = create_engine('mssql+pyodbc://ul7261/DSA_magasin?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
+source = create_engine('source path')
+dsa = create_engine('DSA path')
 
 # --- Création des tables si elles n'existent pas
 with dsa.connect() as conn:

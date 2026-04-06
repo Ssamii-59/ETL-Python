@@ -2,15 +2,10 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 from datetime import datetime
 
-# --- CONNEXIONS ordi maison ---
-# ODS : Source des données (avec colonne date_integration)
-#ods = create_engine('mssql+pyodbc://sa:Momosami.2006@localhost:1433/ods?driver=/opt/homebrew/lib/libmsodbcsql.18.dylib&TrustServerCertificate=yes')
-# DWH : Destination (Schéma en étoile avec IDENTITY)
-#dwh = create_engine('mssql+pyodbc://sa:Momosami.2006@localhost:1433/dwh?driver=/opt/homebrew/lib/libmsodbcsql.18.dylib&TrustServerCertificate=yes')
 
-# --- Connexion iut 
-dwh = create_engine('mssql+pyodbc://ul7261/DWH?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
-ods = create_engine('mssql+pyodbc://ul7261/ODS?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
+# --- Connexion  
+dwh = create_engine('DWH path')
+ods = create_engine('ODS path')
 
 # --- Création des tables DWH si elles n'existent pas ---
 with dwh.connect() as conn:

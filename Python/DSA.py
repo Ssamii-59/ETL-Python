@@ -1,23 +1,12 @@
 import pandas as pd
 from sqlalchemy import create_engine, text
 
-# --- CONNEXIONS ordi de l'iut---
+# --- CONNEXIONS ---
 
-#source = create_engine('mssql+pyodbc://ul7261/Chinook?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
-#dsa = create_engine('mssql+pyodbc://ul7261/DSA?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
-
-# --- CONNEXIONS ordi de l'iut sale 501---
-
-source = create_engine('mssql+pyodbc://IUTC-S501-16/Chinook?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
-dsa = create_engine('mssql+pyodbc://IUTC-S501-16/DSA?driver=ODBC+Driver+17+for+SQL+Server&trusted_connection=yes')
+source = create_engine('source path')
+dsa = create_engine('DSA path')
 
 
-# --- Connexion à la base Chinook Ordi maison ---
-#source = create_engine('mssql+pyodbc://sa:Momosami.2006@localhost:1433/Chinook?driver=/opt/homebrew/lib/libmsodbcsql.18.dylib&TrustServerCertificate=yes')
-
-# --- Connexion à la base DSA ---
-#dsa = create_engine('mssql+pyodbc://sa:Momosami.2006@localhost:1433/dsa?driver=/opt/homebrew/lib/libmsodbcsql.18.dylib&TrustServerCertificate=yes')
-    
 tables = ['Artist', 'Album', 'Track', 
           'Genre', 'MediaType', 'Customer', 'Employee', 
           'Invoice', 'InvoiceLine', 'Playlist', 'PlaylistTrack']
